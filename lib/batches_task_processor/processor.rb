@@ -42,21 +42,21 @@ module BatchesTaskProcessor
     # @example ['article_id1', 'article_id2', 'article_id3']
     # @example Article.where(created_at: 1.month_ago..Time.current)
     def calculate_items
-      raise('Implement calculate_items method')
+      instance_exec(&BatchesTaskProcessor::Config.calculate_items)
     end
 
     # @example item.perform_my_action
-    def process_item(_item)
-      raise('Implement calculate_items method')
+    def process_item(item)
+      instance_exec(item, &BatchesTaskProcessor::Config.process_item)
     end
 
     def per_page
-      5000
+      BatchesTaskProcessor::Config.per_page
     end
 
     # @example Article.where(no: items)
     def preload_job_items(items)
-      items
+      instance_exec(items, &BatchesTaskProcessor::Config.preload_job_items)
     end
     # ****** end customizations
 
