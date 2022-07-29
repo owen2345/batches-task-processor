@@ -16,6 +16,7 @@ And then execute: `bundle install`
   Sample Array:    
   ```ruby
     # config/initializers/batches_task_processor.rb
+    require 'batches_task_processor'
     BatchesTaskProcessor::Config.configure do |config|
       config.per_page = 100
       config.calculate_items = -> { [1,2,3,5] }
@@ -37,7 +38,7 @@ And then execute: `bundle install`
 Settings:    
 - `config.calculate_items` (Mandatory) method called to calculate the whole list of items to process
 - `config.process_item(item)` (Mandatory) method called to process each item
-- `config.per_page` (Optional) number of items in one batch
+- `config.per_page` (Optional, default 5000) number of items in one batch
 - `config.preload_job_items(items)` (Optional) Allows to preload associations or load objects list. Provides `items` which is a chunk of items to process.
 Tasks:    
 - `rake batches_task_processor:call` Starts the processing of jobs.
@@ -47,6 +48,8 @@ Tasks:
 - `rake batches_task_processor:cancel` Marks as cancelled the process and stops processing jobs.
 - `rake batches_task_processor:clear` Removes all process logs or tmp data.
 
+## TODOs
+- Add the ability to retry with different per_page and take care of the :already_processed?
 
 ## Contributing
 Contribution directions go here.
