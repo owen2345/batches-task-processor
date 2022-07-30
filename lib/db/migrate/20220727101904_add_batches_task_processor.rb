@@ -12,7 +12,7 @@ class AddBatchesTaskProcessor < ActiveRecord::Migration[5.0]
     end
 
     create_table :batches_task_processor_items do |t|
-      t.belongs_to :batch_task_processor, foreign_key: true
+      t.belongs_to :batches_task_processors, foreign_key: true, index: { name: 'index_batches_task_processors_parent_id' }
       t.string :key
       t.text :result
       t.text :error_details

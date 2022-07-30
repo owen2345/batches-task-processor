@@ -8,7 +8,6 @@ module BatchesTaskProcessor
     end
     initializer :append_migrations do |app|
       path = File.join(File.expand_path('../../', __FILE__), 'db/migrate')
-      puts "@@@@@@@@@@@@path: #{path}"
       app.config.paths["db/migrate"] << path
     end
   end
