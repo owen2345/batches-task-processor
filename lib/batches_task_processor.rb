@@ -1,15 +1,13 @@
+# frozen_string_literal: true
+
 require "batches_task_processor/version"
 require "batches_task_processor/railtie"
 require "batches_task_processor/processor"
 
-
 module BatchesTaskProcessor
   class Config
-    cattr_accessor(:per_page) { 5000 }
-    cattr_accessor(:calculate_items) { -> { raise('Implement calculate_items method') } }
-    cattr_accessor(:process_item) { -> (_item) { raise('Implement calculate_items method') } }
-    cattr_accessor(:preload_job_items) { -> (items) { items } }
-
+    cattr_accessor(:process_item) { -> (_item, _process_model) { raise('Implement calculate_items method') } }
+    cattr_accessor(:preload_job_items) { -> (items, _process_model) { items } }
 
     def self.configure
       yield self

@@ -4,141 +4,93 @@ require 'active_support/all'
 module BatchesTaskProcessor
   class Processor
     RUNNER_JOB_KEY = 'RUNNER_JOB_KEY'
+    attr_reader :model_id
+
+    def initialize(model_id = nil)
+      @model_id = model_id || ENV['RUNNER_MODEL_ID']
+    end
 
     def call
-      init_cache
       init_jobs
     end
 
     def process_job(job_no)
-      run_job(job_no.to_i, calculate_items)
-    end
-
-    def retry
-      init_jobs
+      run_job(job_no.to_i)
     end
 
     def status
-      res = Rails.cache.read(RUNNER_JOB_KEY)
-      res[:jobs] = res[:jobs].times.map { |i| job_registry(i)[:items].count }
-      puts "Process status: #{res.inspect}"
+      log "Process status: #{process_model.items.count}/#{process_model.data.count}"
     end
 
     def cancel
-      data = Rails.cache.read(RUNNER_JOB_KEY)
-      data[:cancelled] = true
-      Rails.cache.write(RUNNER_JOB_KEY, data)
-    end
-
-    def clear
-      res = Rails.cache.read(RUNNER_JOB_KEY)
-      res[:jobs].times.each { |i| job_registry(i, :delete) }
-      Rails.cache.delete(RUNNER_JOB_KEY)
+      process_model.cancel!
     end
 
     private
 
-    # ****** customizations
-    # @example ['article_id1', 'article_id2', 'article_id3']
-    # @example Article.where(created_at: 1.month_ago..Time.current)
-    def calculate_items
-      instance_exec(&BatchesTaskProcessor::Config.calculate_items)
-    end
-
     # @example item.perform_my_action
     def process_item(item)
-      instance_exec(item, &BatchesTaskProcessor::Config.process_item)
-    end
-
-    def per_page
-      BatchesTaskProcessor::Config.per_page
+      instance_exec(item, process_model, &BatchesTaskProcessor::Config.process_item)
     end
 
     # @example Article.where(no: items)
     def preload_job_items(items)
-      instance_exec(items, &BatchesTaskProcessor::Config.preload_job_items)
-    end
-    # ****** end customizations
-
-    def init_cache
-      items = calculate_items
-      jobs = (items.count.to_f / per_page).ceil
-      data = { jobs: jobs, count: items.count, date: Time.current, finished_jobs: [], cancelled: false }
-      main_registry(data)
+      instance_exec(items, process_model, &BatchesTaskProcessor::Config.preload_job_items)
     end
 
     def init_jobs
-      jobs = main_registry[:jobs]
+      jobs = process_model.qty_jobs
       log "Initializing #{jobs} jobs..."
       jobs.times.each do |index|
         log "Starting ##{index} job..."
-        pid = Process.spawn("RUNNER_JOB_NO=#{index} rake batches_task_processor:process_job &")
+        env_vars = "RUNNER_JOB_NO=#{index} RUNNER_MODEL_ID=#{model_id}"
+        pid = Process.spawn("#{env_vars} rake batches_task_processor:process_job &")
         Process.detach(pid)
       end
     end
 
-    def run_job(job, items)
+    def run_job(job)
       log "Running ##{job} job..."
-      preload_job_items(job_items(items, job)).each_with_index do |item, index|
+      preload_job_items(job_items(job)).each_with_index do |item, index|
         key = item.try(:id) || item
         break log('Process cancelled') if process_cancelled?
-        next log("Skipping #{key}...") if already_processed?(job, key)
+        next log("Skipping #{key}...") if already_processed?(key)
 
         start_process_item(item, job, key, index)
       end
 
-      mark_finished_job(job)
       log "Finished #{job} job..."
+      process_model.finish! if process_model.all_processed?
     end
 
-    def job_items(items, job)
-      items.is_a?(Array) ? items.each_slice(per_page).to_a[job] : items.offset(job * per_page).limit(per_page)
+    def job_items(job)
+      process_model.data.each_slice(process_model.per_page).to_a[job]
     end
 
     def start_process_item(item, job, key, index)
       log "Processing #{job}/#{key}: #{index}/#{per_page}"
-      process_item(item)
-      update_job_cache(job, key)
+      result = process_item(item)
+      process_model.items.create!(key: key, result: result)
     rescue => e
-      update_job_cache(job, key, e.message)
+      process_model.items.create!(key: key, error_details: e.message)
       log "Process failed #{job}/#{key}: #{e.message}"
     end
 
-    def main_registry(new_data = nil)
-      Rails.cache.write(RUNNER_JOB_KEY, new_data, expires_in: 1.week) if new_data
-      new_data || Rails.cache.read(RUNNER_JOB_KEY)
-    end
-
-    def mark_finished_job(job)
-      main_registry(main_registry.merge(finished_jobs: main_registry[:finished_jobs] + [job]))
-    end
-
-    def job_registry(job, new_data = nil)
-      key = "#{RUNNER_JOB_KEY}/#{job}"
-      default_data = { items: [], errors: [] }
-      Rails.cache.write(key, default_data, expires_in: 1.week) unless Rails.cache.read(key)
-      Rails.cache.write(key, new_data, expires_in: 1.week) if new_data
-      Rails.cache.delete(key) if new_data == :delete
-      new_data || Rails.cache.read(key)
-    end
-
-    def update_job_cache(job, value, error = nil)
-      data = job_registry(job)
-      data[:items] << value
-      data[:errors] << [value, error] if error
-      job_registry(job, data)
-    end
-
-    def already_processed?(job, value)
-      job_registry(job)[:items].include?(value)
+    def already_processed?(key)
+      process_model.items.where(key: key).exists?
     end
 
     def process_cancelled?
-      Rails.cache.read(RUNNER_JOB_KEY)[:cancelled]
+      process_model.state == 'cancelled'
     end
 
     def log(msg)
       puts "BatchesTaskProcessor => #{msg}"
+    end
+
+    def process_model
+      klass = BatchesTaskProcessor::Model.root
+      model_id ? klass.where(id: model_id) : klass.last
     end
   end
 end
