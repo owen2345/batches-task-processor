@@ -90,7 +90,7 @@ module BatchesTaskProcessor
 
     def process_model
       klass = BatchesTaskProcessor::Model.all
-      model_id ? klass.where(id: model_id) : klass.last
+      model_id ? klass.find(model_id) : klass.last
     end
   end
 end
