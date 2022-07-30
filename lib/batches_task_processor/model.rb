@@ -3,7 +3,7 @@
 module BatchesTaskProcessor
   class Model < ActiveRecord::Base
     self.table_name = 'batches_task_processors'
-    has_many :items, class_name: 'BatchesTaskProcessor::ModelItem', dependent: :destroy
+    has_many :items, class_name: 'BatchesTaskProcessor::ModelItem', dependent: :destroy, foreign_key: :batches_task_processors_id
     # state: :pending, :processing, :finished, :canceled
     before_create :apply_data_uniqueness
 
