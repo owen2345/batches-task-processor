@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module BatchesTaskProcessor
-  class Model < ApplicationRecord
+  class Model < ActiveRecord::Base
     self.table_name = 'batches_task_processors'
     has_many :items, class_name: 'BatchesTaskProcessor::ModelItem', dependent: :destroy
     # state: :pending, :processing, :finished, :canceled
