@@ -70,7 +70,7 @@ module BatchesTaskProcessor
     def start_process_item(item, job, key, index)
       log "Processing #{job}/#{key}: #{index}/#{per_page}"
       result = process_item(item)
-      process_model.items.create!(key: key, result: result)
+      process_model.items.create!(key: key, result: result.to_s[0..255])
     rescue => e
       process_model.items.create!(key: key, error_details: e.message)
       log "Process failed #{job}/#{key}: #{e.message}"

@@ -11,21 +11,25 @@ And then execute: `bundle install`
 
 
 ## Usage
-- Register a new task: 
-  `task = BatchesTaskProcessor::Model.create!(key: 'my_process', data: [1, 2, 3], per_page: 5000)`
-  Activerecord sample:
-  `process_model = BatchesTaskProcessor::Model.create!(key: 'my_process', data: Article.pluck(:id), per_page: 5000)`
-
-- Create an initializer file for your application:    
-  Sample Array:    
+- Create an initializer file for your application to define the way to preload and process items:    
   ```ruby
     # config/initializers/batches_task_processor.rb
     require 'batches_task_processor'
     BatchesTaskProcessor::Config.configure do |config|
-      config.preload_job_items = -> { |items, process_model| Article.where(id: items) }
-      config.process_item = -> { |item, process_model| MyService.new.process(item) }
+      config.preload_job_items = ->(items, process_model) { Article.where(id: items) }
+      config.process_item = ->(items, process_model) { MyService.new.process(item) }
     end
   ```
+  
+- Register a new task: 
+  ```ruby
+    task = BatchesTaskProcessor::Model.create!(key: 'my_process', data: [1, 2, 3], per_page: 5000)
+  ```
+  Activerecord sample:
+  ```ruby
+    process_model = BatchesTaskProcessor::Model.create!(key: 'my_process', data: Article.pluck(:id), per_page: 5000)
+  ```
+  
 - Run the corresponding rake task:     
   Copy the `process_model.id` from step one and use it in the following code:    
   `RUNNER_MODEL_ID=<id-here> rake batches_task_processor:call`
@@ -42,6 +46,7 @@ Tasks (requires `RUNNER_MODEL_ID` env variable):
 
 ## TODO
 - Update tests to use ActiveRecord
+- Define settings per key instead
 
 ## Contributing
 Contribution directions go here.
