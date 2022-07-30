@@ -3,6 +3,8 @@
 require "batches_task_processor/version"
 require "batches_task_processor/railtie"
 require "batches_task_processor/processor"
+require "../lib/models/batches_task_processor/model"
+require "../lib/models/batches_task_processor/model_item"
 
 module BatchesTaskProcessor
   class Config
