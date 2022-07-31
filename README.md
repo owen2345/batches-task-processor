@@ -11,15 +11,17 @@ And then execute: `bundle install`
 
 
 ## Usage 
-- Register a new task: 
+- Register a new task:     
+  The following will process 200 items with 10 jobs parallelly each one in charge of 20 items.
   ```ruby
   task = BatchesTaskProcessor::Model.create!(
     key: 'my_process',
-    data: [1, 2, 3],
+    data: [1, 2, 3,...200],
     qty_jobs: 10,
     process_item: 'puts "my item: #{item}"'
   )
   ```
+  
   Activerecord sample (recommended `preload_job_items` for performance reasons):
   ```ruby
   task = BatchesTaskProcessor::Model.create!(
@@ -31,7 +33,8 @@ And then execute: `bundle install`
   )
   ```
   
-- Run the corresponding rake task:     
+- Start processing the task by running the rake task:
+  ```ruby     
   Copy the `task.id` from step one and use it in the following code:    
   `RUNNER_MODEL_ID=<id-here> rake batches_task_processor:call`
   
