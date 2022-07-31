@@ -37,6 +37,9 @@ And then execute: `bundle install`
   
 ![Photo](./img.png)
 
+## TODO
+- update tests
+
 ## Api
 Settings:    
 - `data` (Array<Integer|String>) Array of whole items to be processed.
