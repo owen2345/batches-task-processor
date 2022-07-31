@@ -6,8 +6,10 @@ class AddBatchesTaskProcessor < ActiveRecord::Migration[5.0]
       t.string :key
       t.string :state, default: :pending
       t.json :data, default: []
-      t.integer :per_page, default: 5000
+      t.integer :qty_jobs, default: 10
       t.datetime :finished_at
+      t.text :preload_job_items
+      t.text :process_item, null: false
       t.timestamps
     end
 

@@ -10,34 +10,38 @@ gem "batches_task_processor"
 And then execute: `bundle install`
 
 
-## Usage
-- Create an initializer file for your application to define the way to preload and process items:    
-  ```ruby
-    # config/initializers/batches_task_processor.rb
-    require 'batches_task_processor'
-    BatchesTaskProcessor::Config.configure do |config|
-      config.preload_job_items = ->(items, process_model) { Article.where(id: items) }
-      config.process_item = ->(items, process_model) { MyService.new.process(item) }
-    end
-  ```
-  
+## Usage 
 - Register a new task: 
   ```ruby
-    task = BatchesTaskProcessor::Model.create!(key: 'my_process', data: [1, 2, 3], per_page: 5000)
+  task = BatchesTaskProcessor::Model.create!(
+    key: 'my_process',
+    data: [1, 2, 3],
+    qty_jobs: 10,
+    process_item: 'puts "my item: #{item}"'
+  )
   ```
-  Activerecord sample:
+  Activerecord sample (recommended `preload_job_items` for performance reasons):
   ```ruby
-    process_model = BatchesTaskProcessor::Model.create!(key: 'my_process', data: Article.pluck(:id), per_page: 5000)
+  task = BatchesTaskProcessor::Model.create!(
+    key: 'my_process',
+    data: Article.pluck(:id),
+    qty_jobs: 10,
+    preload_job_items: 'Article.where(id: items)',
+    process_item: 'puts "my article: #{item.id}"'
+  )
   ```
   
 - Run the corresponding rake task:     
-  Copy the `process_model.id` from step one and use it in the following code:    
+  Copy the `task.id` from step one and use it in the following code:    
   `RUNNER_MODEL_ID=<id-here> rake batches_task_processor:call`
 
 ## Api
 Settings:    
-- `config.process_item(item)` (Mandatory) method called to process each item
-- `config.preload_job_items(items)` (Optional) Allows to preload associations or load objects list. Provides `items` which is a chunk of items to process.
+- `data` (Array<Integer|String>) Array of whole items to be processed.
+- `key` (Mandatory) key to be used to identify the task.
+- `qty_jobs` (Optional) number of jobs to be created. Default: `10`
+- `process_item` (Mandatory) callback to be called to perform each item where `item` variable holds the current item value. Sample: `'Article.find(item).update_column(:title, "changed")'`
+- `preload_job_items` (Optional) callback that allows to preload items list and/or associations where `items` variable holds the current chunk of items to be processed (by default returns the same list). Sample: `Article.where(id: items)`
 
 Tasks (requires `RUNNER_MODEL_ID` env variable):    
 - `rake batches_task_processor:call` Starts the processing of jobs.

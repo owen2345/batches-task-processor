@@ -30,12 +30,12 @@ module BatchesTaskProcessor
 
     # @example item.perform_my_action
     def process_item(item)
-      instance_exec(item, process_model, &BatchesTaskProcessor::Config.process_item)
+      instance_eval(process_model.process_item)
     end
 
     # @example Article.where(no: items)
     def preload_job_items(items)
-      instance_exec(items, process_model, &BatchesTaskProcessor::Config.preload_job_items)
+      instance_eval(process_model.preload_job_items || 'items')
     end
 
     def init_jobs
@@ -51,7 +51,8 @@ module BatchesTaskProcessor
 
     def run_job(job)
       log "Running ##{job} job..."
-      preload_job_items(job_items(job)).each_with_index do |item, index|
+      items = job_items(job)
+      (items.try(:find_each) || items.each).with_index do |item, index|
         key = item.try(:id) || item
         break log('Process cancelled') if process_cancelled?
         next log("Skipping #{key}...") if already_processed?(key)
@@ -64,11 +65,12 @@ module BatchesTaskProcessor
     end
 
     def job_items(job)
-      process_model.data.each_slice(process_model.per_page).to_a[job]
+      res = process_model.data.each_slice(process_model.qty_items_job).to_a[job]
+      preload_job_items(res)
     end
 
     def start_process_item(item, job, key, index)
-      log "Processing #{job}/#{key}: #{index}/#{process_model.per_page}"
+      log "Processing #{job}/#{key}: #{index}/#{process_model.qty_items_job}"
       result = process_item(item)
       process_model.items.create!(key: key, result: result.to_s[0..255])
     rescue => e

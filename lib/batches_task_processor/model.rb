@@ -4,11 +4,13 @@ module BatchesTaskProcessor
   class Model < ActiveRecord::Base
     self.table_name = 'batches_task_processors'
     has_many :items, class_name: 'BatchesTaskProcessor::ModelItem', dependent: :destroy, foreign_key: :batches_task_processors_id
-    # state: :pending, :processing, :finished, :canceled
+    validate :process_item, presence: true
+    validate :key, presence: true
     before_create :apply_data_uniqueness
+    # state: :pending, :processing, :finished, :canceled
 
-    def qty_jobs
-      (data.count.to_f / per_page).ceil
+    def qty_items_job
+      @qty_items_job ||= (data.count.to_f / qty_jobs).ceil
     end
 
     def finish!
