@@ -1,5 +1,5 @@
 # BatchesTaskProcessor
-Gem that allows to process huge amount of tasks in parallel using batches (Supports for array or activerecord collections).
+Gem that allows to process huge amount of any kind of tasks in parallel using batches.
 
 ## Installation
 Add this line to your application's Gemfile:
@@ -24,7 +24,7 @@ And then execute: `bundle install`
   ```ruby
   task = BatchesTaskProcessor::Model.create!(
     key: 'my_process',
-    data: Article.pluck(:id),
+    data: Article.all.pluck(:id),
     qty_jobs: 10,
     preload_job_items: 'Article.where(id: items)',
     process_item: 'puts "my article: #{item.id}"'
@@ -34,6 +34,8 @@ And then execute: `bundle install`
 - Run the corresponding rake task:     
   Copy the `task.id` from step one and use it in the following code:    
   `RUNNER_MODEL_ID=<id-here> rake batches_task_processor:call`
+  
+![Photo](./img.png)
 
 ## Api
 Settings:    
@@ -44,13 +46,9 @@ Settings:
 - `preload_job_items` (Optional) callback that allows to preload items list and/or associations where `items` variable holds the current chunk of items to be processed (by default returns the same list). Sample: `Article.where(id: items)`
 
 Tasks (requires `RUNNER_MODEL_ID` env variable):    
-- `rake batches_task_processor:call` Starts the processing of jobs.
+- `rake batches_task_processor:call` Starts the processing of jobs (Skips already processed ones when rerunning after cancel).
 - `rake batches_task_processor:status` Prints the process status.
-- `rake batches_task_processor:cancel` Marks as cancelled the process and stops processing jobs.
-
-## TODO
-- Update tests to use ActiveRecord
-- Define settings per key instead
+- `rake batches_task_processor:cancel` Marks as cancelled the process and stops processing jobs (Change into `pending` to rerun again).
 
 ## Contributing
 Contribution directions go here.
