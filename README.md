@@ -29,6 +29,7 @@ And then execute: `bundle install && bundle exec rake db:migrate`
   - `task.start!` starts the task (initializes the jobs)
   - `task.cancel` cancels the task at any time and stops processing the items
   - `task.export` exports the items that were processed in a csv file
+  - `task.status` prints the current status of the task
   - `task.items` returns the items that were processed so far       
     Each item includes the following attributes: `# { key: 'value from items', result: "value returned from the process_item callback", error_details: "error message from the process_message callback if failed" }`
 

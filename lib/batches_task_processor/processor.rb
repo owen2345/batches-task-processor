@@ -70,7 +70,7 @@ module BatchesTaskProcessor
     end
 
     def start_process_item(item, job, key, index)
-      log "Processing #{job}/#{key}: #{index}/#{task_model.qty_items_job}"
+      log "Processing key: #{key}, job: #{job}, counter: #{index}/#{task_model.qty_items_job}"
       result = process_item(item)
       task_model.items.create!(key: key, result: result.to_s[0..255])
     rescue => e
