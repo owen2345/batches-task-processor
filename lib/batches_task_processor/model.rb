@@ -32,7 +32,7 @@ module BatchesTaskProcessor
     end
 
     def status
-      log "Process status: #{task_model.items.count}/#{task_model.data.count}"
+      Rails.logger.info "Process status: #{task_model.items.count}/#{task_model.data.count}"
     end
 
     def export
@@ -40,7 +40,7 @@ module BatchesTaskProcessor
       data = items.pluck(:key, :result, :error_details)
       data = [['Key', 'Result', 'Error details']] + data
       File.write(path, data.map(&:to_csv).join)
-      log "Exported to #{path}"
+      Rails.logger.info "Exported to #{path}"
     end
     # ********* end user methods
 
