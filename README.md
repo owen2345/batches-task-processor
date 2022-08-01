@@ -1,6 +1,6 @@
 # BatchesTaskProcessor
-Ruby Gem that allows to process huge amount of any kind of tasks in parallel using batches with the ability to cancel at any time. 
-The jobs created can be processed in background or in the foreground (inline) with the ability to rerun/retry later (excludes the already processed ones).
+Ruby Gem that allows to process huge amount of any kind of tasks in parallel using batches with the ability to cancel at any time and rerun later (excludes the already processed ones when rerunning) which reduces the process time dramatically. 
+The jobs created can be processed in background (via background jobs) or in the foreground (inline).
 
 ## Installation
 Add this line to your application's Gemfile:
