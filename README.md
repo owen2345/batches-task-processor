@@ -12,14 +12,14 @@ And then execute: `bundle install && bundle exec rake db:migrate`
 
 ## Usage 
 - Register a new task:     
-  The following will process 200 items with 10 jobs parallelly each one in charge of 20 items (recommended `preload_job_items` for performance reasons):
+  The following will process 200k items with 10 jobs parallelly each one in charge of 20k items (recommended `preload_job_items` for performance reasons):
   ```ruby
   task = BatchesTaskProcessor::Model.create!(
     key: 'my_process',
-    data: Article.all.limit(200).pluck(:id),
+    data: Article.all.limit(200000).pluck(:id),
     qty_jobs: 10,
     preload_job_items: 'Article.where(id: items)',
-    process_item: 'puts "my article: #{item.id}"'
+    process_item: 'puts "my article ID: #{item.id}"'
   )
   task.start!
   ```
@@ -27,10 +27,10 @@ And then execute: `bundle install && bundle exec rake db:migrate`
 
 ## Task api  
   - `task.start!` starts the task (initializes the jobs)
-  - `task.cancel` cancels the task and stops processing the items
+  - `task.cancel` cancels the task at any time and stops processing the items
   - `task.export` exports the items that were processed in a csv file
-  - `task.items` returns the items that were processed    
-    Each item includes the following attributes: `# { result: "value returned from the process_item callback", error_details: "error message from the process_message callback if failed" }`
+  - `task.items` returns the items that were processed so far       
+    Each item includes the following attributes: `# { key: 'value from items', result: "value returned from the process_item callback", error_details: "error message from the process_message callback if failed" }`
 
 ## TODO
 - update tests
