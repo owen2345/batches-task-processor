@@ -3,11 +3,10 @@
 require 'active_support/all'
 module BatchesTaskProcessor
   class Processor
-    RUNNER_JOB_KEY = 'RUNNER_JOB_KEY'
-    attr_reader :model_id
+    attr_reader :task_id
 
-    def initialize(model_id = nil)
-      @model_id = model_id || ENV['RUNNER_MODEL_ID']
+    def initialize(task_id = nil)
+      @task_id = task_id || ENV['RUNNER_TASK_ID']
     end
 
     def call
@@ -18,35 +17,36 @@ module BatchesTaskProcessor
       run_job(job_no.to_i)
     end
 
-    def status
-      log "Process status: #{process_model.items.count}/#{process_model.data.count}"
-    end
-
-    def cancel
-      process_model.cancel!
-    end
-
     private
 
     # @example item.perform_my_action
     def process_item(item)
-      instance_eval(process_model.process_item)
+      instance_eval(task_model.process_item)
     end
 
     # @example Article.where(no: items)
     def preload_job_items(items)
-      instance_eval(process_model.preload_job_items || 'items')
+      instance_eval(task_model.preload_job_items || 'items')
     end
 
     def init_jobs
-      jobs = process_model.qty_jobs
+      jobs = task_model.qty_jobs
       log "Initializing #{jobs} jobs..."
       jobs.times.each do |index|
-        log "Starting ##{index} job..."
-        env_vars = "RUNNER_JOB_NO=#{index} RUNNER_MODEL_ID=#{model_id}"
-        pid = Process.spawn("#{env_vars} rake batches_task_processor:process_job &")
-        Process.detach(pid)
+        if task_model.queue_name
+          log "Scheduling ##{index} job..."
+          ProcessorJob.set(queue: task_model.queue_name).perform_later(task_id, index)
+        else
+          start_inline_job(index)
+        end
       end
+    end
+
+    def start_inline_job(job_no)
+      log "Starting ##{job_no} job..."
+      env_vars = "RUNNER_JOB_NO=#{job_no} RUNNER_TASK_ID=#{task_id}"
+      pid = Process.spawn("#{env_vars} rake batches_task_processor:process_job &")
+      Process.detach(pid)
     end
 
     def run_job(job)
@@ -61,38 +61,38 @@ module BatchesTaskProcessor
       end
 
       log "Finished #{job} job..."
-      process_model.finish! if process_model.all_processed?
+      task_model.finish! if task_model.all_processed?
     end
 
     def job_items(job)
-      res = process_model.data.each_slice(process_model.qty_items_job).to_a[job]
+      res = task_model.data.each_slice(task_model.qty_items_job).to_a[job]
       preload_job_items(res)
     end
 
     def start_process_item(item, job, key, index)
-      log "Processing #{job}/#{key}: #{index}/#{process_model.qty_items_job}"
+      log "Processing #{job}/#{key}: #{index}/#{task_model.qty_items_job}"
       result = process_item(item)
-      process_model.items.create!(key: key, result: result.to_s[0..255])
+      task_model.items.create!(key: key, result: result.to_s[0..255])
     rescue => e
-      process_model.items.create!(key: key, error_details: e.message)
+      task_model.items.create!(key: key, error_details: e.message)
       log "Process failed #{job}/#{key}: #{e.message}"
     end
 
     def already_processed?(key)
-      process_model.items.where(key: key).exists?
+      task_model.items.where(key: key).exists?
     end
 
     def process_cancelled?
-      process_model.state == 'cancelled'
+      task_model.state == 'cancelled'
     end
 
     def log(msg)
       puts "BatchesTaskProcessor => #{msg}"
     end
 
-    def process_model
+    def task_model
       klass = BatchesTaskProcessor::Model.all
-      model_id ? klass.find(model_id) : klass.last
+      task_id ? klass.find(task_id) : klass.last
     end
   end
 end

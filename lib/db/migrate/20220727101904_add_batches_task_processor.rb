@@ -10,6 +10,7 @@ class AddBatchesTaskProcessor < ActiveRecord::Migration[5.0]
       t.datetime :finished_at
       t.text :preload_job_items
       t.text :process_item, null: false
+      t.string :queue_name, default: :default
       t.timestamps
     end
 

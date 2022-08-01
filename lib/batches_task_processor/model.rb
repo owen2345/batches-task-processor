@@ -17,13 +17,31 @@ module BatchesTaskProcessor
       update!(state: :finished, finished_at: Time.current)
     end
 
-    def cancel!
-      update!(state: :canceled)
-    end
-
     def all_processed?
       items.count == data.count
     end
+
+    # ********* user methods
+    def start!
+      Processor.new(id).call
+    end
+
+    def cancel
+      update!(state: :canceled)
+    end
+
+    def status
+      log "Process status: #{task_model.items.count}/#{task_model.data.count}"
+    end
+
+    def export
+      path = Rails.root.join('tmp/batches_task_processor_result.csv')
+      data = items.pluck(:key, :result, :error_details)
+      data = [['Key', 'Result', 'Error details']] + data
+      File.write(path, data.map(&:to_csv).join)
+      log "Exported to #{path}"
+    end
+    # ********* end user methods
 
     private
 
