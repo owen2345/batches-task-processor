@@ -35,7 +35,7 @@ module BatchesTaskProcessor
       jobs.times.each do |index|
         if task_model.queue_name
           log "Scheduling ##{index} job..."
-          ProcessorJob.set(queue: task_model.queue_name).perform_later(task_id, index)
+          BatchesTaskProcessor::ProcessorJob.set(queue: task_model.queue_name).perform_later(task_id, index)
         else
           start_inline_job(index)
         end
