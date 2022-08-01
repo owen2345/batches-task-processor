@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'csv'
 module BatchesTaskProcessor
   class Model < ActiveRecord::Base
     self.table_name = 'batches_task_processors'
