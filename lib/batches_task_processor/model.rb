@@ -8,6 +8,7 @@ module BatchesTaskProcessor
     validates :process_item, presence: true
     validates :key, presence: true
     before_create :apply_data_uniqueness
+    before_create :check_qty_jobs
     # state: :pending, :processing, :finished, :canceled
 
     def qty_items_job
@@ -20,6 +21,11 @@ module BatchesTaskProcessor
 
     def all_processed?
       items.count == data.count
+    end
+
+    # Text data columns support (Mysql only)
+    def data
+      self[:data].is_a?(String) ? JSON.parse(self[:data] || '[]') : self[:data]
     end
 
     # ********* user methods
@@ -48,6 +54,11 @@ module BatchesTaskProcessor
 
     def apply_data_uniqueness
       self.data = data.uniq
+    end
+
+    # Fix: at least 1 item per job
+    def check_qty_jobs
+      self.qty_jobs = data.count if data.count < qty_jobs
     end
   end
 end
