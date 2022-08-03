@@ -18,8 +18,12 @@ And then execute: `bundle install && bundle exec rake db:migrate`
     key: 'my_process',
     data: Article.all.limit(200000).pluck(:id),
     qty_jobs: 10,
+    queue_name: 'default',
     preload_job_items: 'Article.where(id: items)',
-    process_item: 'puts "my article ID: #{item.id}"'
+    process_item: %{
+      puts "Processing article #{item.id}..."
+      HugeArticleProcessor.new(item).call
+    }
   )
   task.start!
   ```
