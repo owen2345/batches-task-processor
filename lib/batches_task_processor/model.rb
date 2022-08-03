@@ -7,8 +7,8 @@ module BatchesTaskProcessor
     has_many :items, class_name: 'BatchesTaskProcessor::ModelItem', dependent: :destroy, foreign_key: :batches_task_processors_id
     validates :process_item, presence: true
     validates :key, presence: true
-    before_create :apply_data_uniqueness
-    before_create :check_qty_jobs
+    before_save :apply_data_uniqueness
+    before_save :check_qty_jobs
     # state: :pending, :processing, :finished, :canceled
 
     def qty_items_job

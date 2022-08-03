@@ -52,7 +52,7 @@ module BatchesTaskProcessor
     def run_job(job)
       log "Running ##{job} job..."
       items = job_items(job)
-      (items.try(:find_each) || items.each).with_index do |item, index|
+      (items.try(:find_each) || items.each).with_index(1) do |item, index|
         key = item.try(:id) || item
         break log('Process cancelled') if process_cancelled?
         next log("Skipping #{key}...") if already_processed?(key)
