@@ -6,7 +6,7 @@ class AddBatchesTaskProcessor < ActiveRecord::Migration[5.0]
       t.string :key
       t.string :state, default: :pending
       t.json :data, default: [] if support_json?
-      t.text :data unless support_json?
+      t.text :data, limit: 999999 unless support_json?
       t.integer :qty_jobs, default: 10
       t.datetime :finished_at
       t.text :preload_job_items
