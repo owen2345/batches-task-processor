@@ -38,7 +38,7 @@ module BatchesTaskProcessor
     end
 
     def status
-      Rails.logger.info "Process status: #{task_model.items.count}/#{task_model.data.count}"
+      Rails.logger.info "Process status: #{items.count}/#{data.count}"
     end
 
     def export
