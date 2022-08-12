@@ -42,7 +42,8 @@ module BatchesTaskProcessor
     end
 
     def export
-      path = Rails.root.join('tmp/batches_task_processor_result.csv')
+      filename = (key || 'batches_task_processor_result').try(:parameterize)
+      path = Rails.root.join("tmp/#{filename}.csv")
       data = items.pluck(:key, :result, :error_details)
       data = [['Key', 'Result', 'Error details']] + data
       File.write(path, data.map(&:to_csv).join)
