@@ -4,7 +4,7 @@ require 'csv'
 module BatchesTaskProcessor
   class Model < ActiveRecord::Base
     self.table_name = 'batches_task_processors'
-    has_many :items, class_name: 'BatchesTaskProcessor::ModelItem', dependent: :destroy, foreign_key: :batches_task_processors_id
+    has_many :items, class_name: 'BatchesTaskProcessor::ModelItem', dependent: :delete_all, foreign_key: :batches_task_processors_id
     validates :process_item, presence: true
     validates :key, presence: true
     before_save :apply_data_uniqueness
