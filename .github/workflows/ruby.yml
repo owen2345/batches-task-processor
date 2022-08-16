@@ -1,29 +1,16 @@
-name: Ruby Gem
-
+name: App tests
 on:
   push:
     branches:
-      - master
       - main
+      - master
   pull_request:
 
 jobs:
-  build:
-    name: Tests and Code Style
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 2.5
-
-      - name: Install dependencies
-        run: gem install bundler && bundle install
-
-      - name: Tests (rspec)
-        run: |
-          bundle exec rspec
-
-      - name: Code style (Rubocop)
-        run: bundle exec rubocop
+  app-tests:
+    uses: owen2345/reusable-ci-cd-actions/.github/workflows/tests.yml@main
+    with:
+      prepare_db_cmd: null
+      copy_env: false
+      run_rubocop: true
+      rspec_cmd: 'bundle exec rspec'
