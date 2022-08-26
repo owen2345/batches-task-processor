@@ -41,6 +41,10 @@ module BatchesTaskProcessor
       Rails.logger.info "Process status: #{items.count}/#{data.count}"
     end
 
+    def retry_failures
+      start!
+    end
+
     def export
       filename = (key || 'batches_task_processor_result').try(:parameterize)
       path = Rails.root.join("tmp/#{filename}.csv")

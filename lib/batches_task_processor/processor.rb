@@ -55,7 +55,7 @@ module BatchesTaskProcessor
       (items.try(:find_each) || items.each).with_index(1) do |item, index|
         key = item.try(:id) || item
         break log('Process cancelled') if process_cancelled?
-        next log("Skipping #{key}...") if already_processed?(key)
+        next if already_processed?(key)
 
         start_process_item(item, job, key, index)
       end
@@ -72,14 +72,14 @@ module BatchesTaskProcessor
     def start_process_item(item, job, key, index)
       log "Processing key: #{key}, job: #{job}, counter: #{index}/#{task_model.qty_items_job}"
       result = process_item(item)
-      task_model.items.create!(key: key, result: result.to_s[0..255])
+      task_model.items.where(key: key).first_or_initialize.update!(result: result, error_details: nil)
     rescue => e
-      task_model.items.create!(key: key, error_details: e.message)
+      task_model.items.where(key: key).first_or_initialize.update!(result: nil, error_details: e.message)
       log "Process failed #{job}/#{key}: #{e.message}"
     end
 
     def already_processed?(key)
-      task_model.items.where(key: key).exists?
+      task_model.items.where(key: key, error_details: nil).exists?
     end
 
     def process_cancelled?
