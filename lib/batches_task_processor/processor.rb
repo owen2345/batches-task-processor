@@ -83,7 +83,8 @@ module BatchesTaskProcessor
     end
 
     def process_cancelled?
-      task_model.state == 'cancelled'
+      state = BatchesTaskProcessor::Model.select(:state).find(task_model.id).state
+      state == 'cancelled'
     end
 
     def log(msg)
